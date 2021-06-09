@@ -1,0 +1,250 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingressgateway
+  namespace: istio-ingress
+spec:
+  type: LoadBalancer
+  selector:
+    istio: ingressgateway
+  ports:
+  - port: 80
+    name: http
+  - port: 443
+    name: https
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ingressgateway
+  namespace: istio-ingress
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  template:
+    metadata:
+      annotations:
+        # Select the gateway injection template (rather than the default sidecar template)
+        inject.istio.io/templates: gateway
+      labels:
+        # Set a unique label for the gateway. This is required to ensure Gateways can select this workload
+        istio: ingressgateway
+        # Enable gateway injection. If connecting to a revisioned control plane, replace with "istio.io/rev: revision-name"
+        sidecar.istio.io/inject: "true"
+    spec:
+      containers:
+      - name: istio-proxy
+        image: auto # The image will automatically update each time the pod starts.
+      - env:
+        - name: DEFENDER_INSTANCE_ID
+          value: defender
+        - name: DEFENDER_POOL_ID
+          value: default
+        - name: POLLING_INTERVAL
+          value: "30"
+        - name: PROMETHEUS_ENABLED
+          value: "true"
+        - name: PROMETHEUS_PORT
+          value: "9145"
+        - name: DETECTOR_POLICY_ENGINE
+          value: policy-engine
+        - name: DETECTOR_POLICY_ENGINE_PORT
+          value: "443"
+        - name: CONFIG_SERVICE_IP
+          value: policy-engine
+        - name: CONFIG_SERVICE_PORT
+          value: "443"
+        - name: CONFIG_SERVICE_SCHEME
+          value: https
+        - name: DEFENDER_LOG_OUTPUT
+          value: console
+        - name: DEFENDER_LOG_LEVEL
+          value: error
+        - name: CQ_DEFENDER_HTTP_PORT
+          value: "8080"
+        - name: CQ_DEFENDER_HTTPS_PORT
+          value: "8443"
+        - name: HTTPS_UPSTREAM_SCHEME
+          value: https
+        - name: HTTPS_UPSTREAM_SERVER
+          value: 127.0.0.1
+        - name: HTTPS_UPSTREAM_PORT
+          value: "443"
+        - name: HTTPS_UPSTREAM_KEEPALIVE
+          value: "128"
+        - name: HTTP_UPSTREAM_SCHEME
+          value: http
+        - name: HTTP_UPSTREAM_SERVER
+          value: 127.0.0.1
+        - name: HTTP_UPSTREAM_PORT
+          value: "80"
+        - name: HTTP_UPSTREAM_KEEPALIVE
+          value: "128"
+        - name: UPSTREAM_CONFIG_TYPE
+          value: static
+        - name: CDN_S3_BUCKET
+        - name: CDN_CUSTOMER_NAME_NORMALIZED
+        - name: UPSTREAM_CONFIG_URL
+        - name: SENSOR_NORMALIZE_URI
+          value: "false"
+        - name: SENSOR_SHARED_MEMORY_SIZE
+          value: 100m
+        - name: TRUE_CLIENT_IP_CONFIG
+          value: true-client-ip, x-forwarded-for:-1
+        - name: APPFIREWALL_ENABLED
+          value: "1"
+        - name: CQAI_PRESENT
+          value: "1"
+        - name: DATA_PIPELINE_IP
+          value: kafka-kafka-bootstrap:9093
+        - name: MITIGATOR_PIPELINE_IP
+          value: kafka-kafka-bootstrap:9093
+        - name: SENSOR_KAFKA_USE_TLS
+          value: "1"
+        - name: SENSOR_KAFKA_CA_FILE
+          value: /opt/cequence/.trust/kafka0/ca.cert
+        - name: SENSOR_KAFKA_CERT_FILE
+          value: /opt/cequence/.trust/kafka0/sensor-kafka.ca.crt
+        - name: SENSOR_KAFKA_KEY_FILE
+          value: /opt/cequence/.trust/kafka0/sensor-kafka.key
+        - name: MITIGATOR_KAFKA_USE_TLS
+          value: "1"
+        - name: MITIGATOR_KAFKA_CA_FILE
+          value: /opt/cequence/.trust/kafka0/ca.cert
+        - name: MITIGATOR_KAFKA_CERT_FILE
+          value: /opt/cequence/.trust/kafka0/mitigator-kafka.ca.crt
+        - name: MITIGATOR_KAFKA_KEY_FILE
+          value: /opt/cequence/.trust/kafka0/mitigator-kafka.key
+        - name: APPFIREWALL_KAFKA_USE_TLS
+          value: "1"
+        - name: APPFIREWALL_KAFKA_CA_FILE
+          value: /opt/cequence/.trust/kafka0/ca.cert
+        - name: APPFIREWALL_KAFKA_CERT_FILE
+          value: /opt/cequence/.trust/kafka0/appfirewall-kafka.ca.crt
+        - name: APPFIREWALL_KAFKA_KEY_FILE
+          value: /opt/cequence/.trust/kafka0/appfirewall-kafka.key
+        - name: DISCOVERY_KAFKA_USE_TLS
+          value: "1"
+        - name: DISCOVERY_KAFKA_CA_FILE
+          value: /opt/cequence/.trust/kafka0/ca.cert
+        - name: DISCOVERY_KAFKA_CERT_FILE
+          value: /opt/cequence/.trust/kafka0/discovery-kafka.ca.crt
+        - name: DISCOVERY_KAFKA_KEY_FILE
+          value: /opt/cequence/.trust/kafka0/discovery-kafka.key
+        image: registry.gitlab.com/cequence/releases/defender:2.3.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /.stealth-check
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        name: defender
+        ports:
+        - containerPort: 8443
+          name: https
+          protocol: TCP
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 9122
+          name: mitigatorprom
+          protocol: TCP
+        - containerPort: 9145
+          name: nginxprom
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /.stealth-check
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 2
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+          requests:
+            cpu: "1"
+            memory: 1Gi
+        securityContext:
+          runAsGroup: 1001
+          runAsUser: 1001
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /opt/cequence/.trust/kafka0/ca.cert
+          name: defender-certs-vol-0
+          readOnly: true
+          subPath: ca.cert
+        - mountPath: /opt/cequence/.trust/kafka0/appfirewall-kafka.ca.crt
+          name: defender-certs-vol-0
+          readOnly: true
+          subPath: appfirewall-kafka.ca.crt
+        - mountPath: /opt/cequence/.trust/kafka0/appfirewall-kafka.key
+          name: defender-certs-vol-0
+          readOnly: true
+          subPath: appfirewall-kafka.key
+        - mountPath: /opt/cequence/.trust/kafka0/discovery-kafka.ca.crt
+          name: defender-certs-vol-0
+          readOnly: true
+          subPath: discovery-kafka.ca.crt
+        - mountPath: /opt/cequence/.trust/kafka0/discovery-kafka.key
+          name: defender-certs-vol-0
+          readOnly: true
+          subPath: discovery-kafka.key
+        - mountPath: /opt/cequence/.trust/kafka0/mitigator-kafka.ca.crt
+          name: defender-certs-vol-0
+          readOnly: true
+          subPath: mitigator-kafka.ca.crt
+        - mountPath: /opt/cequence/.trust/kafka0/mitigator-kafka.key
+          name: defender-certs-vol-0
+          readOnly: true
+          subPath: mitigator-kafka.key
+        - mountPath: /opt/cequence/.trust/kafka0/sensor-kafka.ca.crt
+          name: defender-certs-vol-0
+          readOnly: true
+          subPath: sensor-kafka.ca.crt
+        - mountPath: /opt/cequence/.trust/kafka0/sensor-kafka.key
+          name: defender-certs-vol-0
+          readOnly: true
+          subPath: sensor-kafka.key
+      imagePullSecrets:
+      - name: istio-regcred
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: defender-kafka-certs-cm-0
+        name: defender-certs-vol-0
+---
+# Set up roles to allow reading credentials for TLS
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: istio-ingressgateway-sds
+  namespace: istio-ingress
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "watch", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: istio-ingressgateway-sds
+  namespace: istio-ingress
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: istio-ingressgateway-sds
+subjects:
+- kind: ServiceAccount
+  name: default

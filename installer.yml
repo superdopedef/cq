@@ -1,0 +1,85 @@
+---
+- hosts: masters[0]
+  tags: controlplane_init
+  gather_facts: no
+  become: yes
+  tasks:
+  - name: Initial Master | Copy kubeadm config
+    copy:
+      src: ./outputs/kubeadm-config.yml
+      dest: /home/admin/init-kubeadm-config.yml
+  - name: Initial Master | Initialise kubeadm
+    shell: kubeadm init --config /home/admin/init-kubeadm-config.yml
+    register: kubeadm_init
+  - name: Initial Master | Collect certificate key
+    shell: kubeadm certs certificate-key
+    register: cert_key
+    changed_when: no
+  - name: Initial Master | Upload certificates
+    shell: kubeadm init phase upload-certs --upload-certs --certificate-key {{ cert_key.stdout }}
+    register: kubeadm_phase
+  - name: Initial Master | Collect the token
+    shell: kubeadm token list | grep authentication | cut -d' ' -f1
+    register: kubeadm_token
+    changed_when: no
+  - name: Initial Master | Collect the hash value
+    shell: openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+    register: kubeadm_hash
+    changed_when: no
+  - name: Initial Master | Create kubeconfig home directory
+    file:
+      path: /home/admin/.kube
+      state: directory
+      owner: admin
+      group: admin
+      mode: '0700'
+  - name: Initial Master | Copy kubeconfig file
+    copy:
+      remote_src: yes
+      src: /etc/kubernetes/admin.conf
+      dest: /home/admin/.kube/config
+      owner: admin
+      group: admin
+      mode: '0600'
+  - name: Initial Master | Apply Canal CNI
+    shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://docs.projectcalico.org/manifests/canal.yaml
+    register: kubectl_cni
+
+- hosts: masters:!masters[0]
+  tags: controlplane_join
+  become: yes
+  tasks:
+  - name: Control Plane | Template the kubeadm config
+    template:
+      src: ./ansible/templates/cp.kubeadm-config.yml.j2
+      dest: /home/admin/cp-join-kubeadm-config.yml
+  - name: Control Plane | Initialise the control plane
+    shell: kubeadm join --config /home/admin/cp-join-kubeadm-config.yml
+    register: kubeadm_join_cp
+
+- hosts: workers
+  tags: dataplane_join
+  become: yes
+  tasks:
+  - name: Workers | Template the kubeadm config
+    template:
+      src: ./ansible/templates/w.kubeadm-config.yml.j2
+      dest: /home/admin/dp-join-kubeadm-config.yml
+  - name: Workers | Initialise the workers
+    shell: kubeadm join --config /home/admin/dp-join-kubeadm-config.yml
+    register: kubeadm_join_dp
+
+- hosts: masters[0]
+  tags: storageclass
+  gather_facts: no
+  tasks:
+  - name: Post Install | Copy storage class yaml
+    copy:
+      src: ./ansible/files/storage-class.yml
+      dest: /home/admin/storage-class.yml
+  - name: Post Install | Install AWS GP2 storage class
+    shell: kubectl apply -f /home/admin/storage-class.yml
+    register: install_gp2
+  - name: Post Install | Install Helm v3
+    shell: curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+    register: install_helm
