@@ -10,8 +10,10 @@ Steps:
 Enjoy!
 
 Example terraform.tfvars
-```aws_region = "eu-west-1"
+```
+aws_region = "eu-west-1"
 aws_profile="playground"
 aws_tags = { "Application"="Kubernetes", "Environment"="Development", "Owner"="my_email_address" }
-aws_vpc_cidr = "10.1.0.0/16"```
+aws_vpc_cidr = "10.1.0.0/16"
+```
 
