@@ -61,7 +61,7 @@ module "worker" {
 }
 
 resource "local_file" "kubeadm" {
-    content     = templatefile("${path.module}/templates/kubeadm.config.tpl",{
+    content     = templatefile("${path.module}/terraform/templates/kubeadm.config.tpl",{
       "master-lb" = module.aws_nlb.dns_name,
       "cluster" = module.aws_utilities.random_name
     })
@@ -74,7 +74,7 @@ resource "local_file" "details" {
 }
 
 resource "local_file" "ansible_inventory" {
-  content = templatefile("${path.module}/templates/ansible-inventory.tpl",
+  content = templatefile("${path.module}/terraform/templates/ansible-inventory.tpl",
     {
       master-lb = module.aws_nlb.dns_name
       cluster = module.aws_utilities.random_name
