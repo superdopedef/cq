@@ -11,28 +11,28 @@ spec:
   http:
   - match:
     - headers:
-        x-cq-select:
-          exact: inspected
+        cq-select:
+          exact: CQ-Select-value
       uri:
         exact: /productpage
     - headers:
-        x-cq-select:
-          exact: inspected
+        cq-select:
+          exact: CQ-Select-value
       uri:
         prefix: /static
     - headers:
-        x-cq-select:
-          exact: inspected
+        cq-select:
+          exact: CQ-Select-value
       uri:
         exact: /login
     - headers:
-        x-cq-select:
-          exact: inspected
+        cq-select:
+          exact: CQ-Select-value
       uri:
         exact: /logout
     - headers:
-        x-cq-select:
-          exact: inspected
+        cq-select:
+          exact: CQ-Select-value
       uri:
         prefix: /api/v1/products
     route:
