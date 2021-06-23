@@ -83,3 +83,10 @@
   - name: Post Install | Install Helm v3
     shell: curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
     register: install_helm
+  - name: Post Install | Copy metrics server yaml
+    copy:
+      src: ./ansible/files/metrics-server.yml
+      dest: /home/admin/metrics-server.yml
+  - name: Post Install | Install metrics-server
+    shell: kubectl apply -f /home/admin/metrics-server.yml
+    register: install_metrics
