@@ -11,6 +11,7 @@ ${ip} ansible_user=admin
 [masters:vars]
 master_nlb=${master-lb}:6443
 cluster_name=${cluster}
+domain_name=${domain_name}
 
 [workers:vars]
 master_nlb=${master-lb}:6443

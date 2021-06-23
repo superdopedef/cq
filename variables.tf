@@ -6,6 +6,8 @@ variable "aws_vpc_cidr" {}
 
 variable "aws_tags" {}
 
+variable "aws_domain_name" {}
+
 variable "instance_flavour" {
   default = "t2.medium"
 }

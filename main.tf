@@ -80,6 +80,7 @@ resource "local_file" "ansible_inventory" {
       cluster = module.aws_utilities.random_name
       masters = module.master.public_ips
       workers = module.worker.public_ips
+      domain_name = var.aws_domain_name
     }
   )
   filename = "${path.module}/outputs/inventory"

@@ -58,10 +58,22 @@
         "elasticloadbalancing:DeregisterTargets",
         "elasticloadbalancing:SetLoadBalancerPoliciesOfListener",
         "iam:CreateServiceLinkedRole",
-        "kms:DescribeKey"
+        "kms:DescribeKey",
+        "route53:ListHostedZones",
+        "route53:ListResourceRecordSets",
+        "route53:ListHostedZonesByName"
       ],
       "Resource": [
         "*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "route53:ChangeResourceRecordSets"
+      ],
+      "Resource": [
+        "arn:aws:route53:::hostedzone/*"
       ]
     }
   ]

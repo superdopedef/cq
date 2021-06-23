@@ -73,12 +73,16 @@
   tags: storageclass
   gather_facts: no
   tasks:
+  - name: Post Install | Create manifests directory
+    file:
+      path: /home/admin/manifests
+      state: directory
   - name: Post Install | Copy storage class yaml
     copy:
       src: ./ansible/files/storage-class.yml
-      dest: /home/admin/storage-class.yml
+      dest: /home/admin/manifests/storage-class.yml
   - name: Post Install | Install AWS GP2 storage class
-    shell: kubectl apply -f /home/admin/storage-class.yml
+    shell: kubectl apply -f /home/admin/manifests/storage-class.yml
     register: install_gp2
   - name: Post Install | Install Helm v3
     shell: curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
@@ -86,7 +90,22 @@
   - name: Post Install | Copy metrics server yaml
     copy:
       src: ./ansible/files/metrics-server.yml
-      dest: /home/admin/metrics-server.yml
+      dest: /home/admin/manifests/metrics-server.yml
   - name: Post Install | Install metrics-server
-    shell: kubectl apply -f /home/admin/metrics-server.yml
+    shell: kubectl apply -f /home/admin/manifests/metrics-server.yml
     register: install_metrics
+  - name: Post Install | Collect hosted zone ID
+    shell: aws route53 list-hosted-zones-by-name --output json --dns-name {{ domain_name }} | jq -r '.HostedZones[0].Id'
+    register: hosted_zone
+  - name: Post Install | Template the External DNS YAML
+    template:
+      src: ./ansible/templates/external-dns.yml.j2
+      dest: /home/admin/manifests/external-dns.yml
+  - name: Post Install | Install external-dns.yml
+    shell: kubectl apply -f /home/admin/manifests/external-dns.yml
+  - name: Post Install | Template the External DNS YAML
+    template:
+      src: ./ansible/templates/dashboard.yml.j2
+      dest: /home/admin/manifests/dashboard.yml
+  - name: Post Install | Install dashboard.yml
+    shell: kubectl apply -f /home/admin/manifests/dashboard.yml
