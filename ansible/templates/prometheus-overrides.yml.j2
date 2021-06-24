@@ -1,0 +1,12 @@
+grafana:
+  adminPassword: {{ grafana_password }}
+  ingress:
+    enabled: true
+    annotations:
+      kubernetes.io/ingress.class: {{ ingress_class }}
+    hosts:
+    - grafana.{{ cluster_name }}.{{ domain_name }}
+kubeApiServer:
+  enabled: true
+kubeEtcd:
+  enabled: false

@@ -70,42 +70,60 @@
     register: kubeadm_join_dp
 
 - hosts: masters[0]
-  tags: storageclass
+  tags: postinstall
   gather_facts: no
+  environment:
+    K8S_AUTH_KUBECONFIG: /home/admin/.kube/config
   tasks:
   - name: Post Install | Create manifests directory
     file:
       path: /home/admin/manifests
       state: directory
-  - name: Post Install | Copy storage class yaml
-    copy:
-      src: ./ansible/files/storage-class.yml
-      dest: /home/admin/manifests/storage-class.yml
-  - name: Post Install | Install AWS GP2 storage class
-    shell: kubectl apply -f /home/admin/manifests/storage-class.yml
-    register: install_gp2
   - name: Post Install | Install Helm v3
     shell: curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
     register: install_helm
-  - name: Post Install | Copy metrics server yaml
-    copy:
-      src: ./ansible/files/metrics-server.yml
-      dest: /home/admin/manifests/metrics-server.yml
+  - name: Post Install | Install storage class
+    k8s:
+      state: present
+      definition: "{{ lookup('file', './ansible/files/storage-class.yml') }}"
   - name: Post Install | Install metrics-server
-    shell: kubectl apply -f /home/admin/manifests/metrics-server.yml
-    register: install_metrics
+    k8s:
+      state: present
+      definition: "{{ lookup('file', './ansible/files/metrics-server.yml') }}"
   - name: Post Install | Collect hosted zone ID
     shell: aws route53 list-hosted-zones-by-name --output json --dns-name {{ domain_name }} | jq -r '.HostedZones[0].Id'
     register: hosted_zone
-  - name: Post Install | Template the External DNS YAML
-    template:
-      src: ./ansible/templates/external-dns.yml.j2
-      dest: /home/admin/manifests/external-dns.yml
   - name: Post Install | Install external-dns.yml
-    shell: kubectl apply -f /home/admin/manifests/external-dns.yml
-  - name: Post Install | Template the External DNS YAML
-    template:
-      src: ./ansible/templates/dashboard.yml.j2
-      dest: /home/admin/manifests/dashboard.yml
+    k8s:
+      state: present
+      definition: "{{ lookup('template', './ansible/templates/external-dns.yml.j2') }}"
   - name: Post Install | Install dashboard.yml
-    shell: kubectl apply -f /home/admin/manifests/dashboard.yml
+    k8s:
+      state: present
+      definition: "{{ lookup('template', './ansible/templates/dashboard.yml.j2') }}"
+  - block:
+      - name: Post Install | Install Ingress - ProjectContour
+        get_url:
+          url: https://projectcontour.io/quickstart/contour.yaml
+          dest: /home/admin/manifests/contour.yaml
+      - k8s:
+          state: present
+          src: /home/admin/manifests/contour.yaml
+    when: ingress_class == "contour"
+  - name: Post Install | Template the Prometheus Overrides YAML
+    template:
+      src: ./ansible/templates/prometheus-overrides.yml.j2
+      dest: /home/admin/manifests/prometheus-overrides.yml
+  - name: Post Install | Add Prometheus Helm repo
+    shell: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  - name: Post Install | Update Helm repos
+    shell: helm repo update
+  - name: Post Install | Create the Monitoring namespace
+    k8s:
+      name: monitoring
+      api_version: v1
+      kind: Namespace
+      state: present
+  - name: Post Install | Install Prometheus
+    shell: helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring -f /home/admin/manifests/prometheus-overrides.yml
+

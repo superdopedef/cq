@@ -14,6 +14,6 @@ variable "centos_search" {
 }
 
 variable "debian_search" {
-    default = "debian-stretch*"
+    default = "debian-10*"
     type = string
 }

@@ -81,6 +81,8 @@ resource "local_file" "ansible_inventory" {
       masters = module.master.public_ips
       workers = module.worker.public_ips
       domain_name = var.aws_domain_name
+      ingress_class = var.k8s_ingress_class
+      grafana_password = var.grafana_password
     }
   )
   filename = "${path.module}/outputs/inventory"

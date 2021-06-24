@@ -8,6 +8,10 @@ variable "aws_tags" {}
 
 variable "aws_domain_name" {}
 
+variable "k8s_ingress_class" {}
+
+variable "grafana_password" {}
+
 variable "instance_flavour" {
   default = "t2.medium"
 }

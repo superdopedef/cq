@@ -28,7 +28,7 @@ data "aws_ami" "centos" {
 
 data "aws_ami" "debian" {
   most_recent = true
-  owners = ["379101102735"]
+  owners = ["136693071363"]
   filter {
     name   = "architecture"
     values = ["x86_64"]
