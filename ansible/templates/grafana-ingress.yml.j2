@@ -1,0 +1,16 @@
+{% if ingress_class == "contour" %}
+apiVersion: projectcontour.io/v1
+kind: HTTPProxy
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  virtualhost:
+    fqdn: grafana.{{ cluster_name }}.{{ domain_name }}
+    tls:
+      secretName: grafana-tls
+  routes:
+    - services:
+        - name: monitoring-grafana
+          port: 80
+{% endif %}
