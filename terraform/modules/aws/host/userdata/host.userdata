@@ -38,7 +38,8 @@ write_files:
       sysctl --system
       mkdir -p /etc/containerd
       containerd config default | tee /etc/containerd/config.toml
-      sed -i 's/\(\[plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options\]\)/\1\n            SystemdCgroup = true/' /etc/containerd/config.toml
+      sed -i 's/\(\_cgroup =\) false/\1 true/' /etc/containerd/config.toml
+      sed -i 's/\(\SystemdCgroup =\) false/\1 true/' /etc/containerd/config.toml
       systemctl restart containerd
       curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
       cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
