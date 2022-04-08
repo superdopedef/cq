@@ -44,6 +44,10 @@
       owner: admin
       group: admin
       mode: '0600'
+  - name: Copy kubeconfig
+    fetch:
+      src: /home/admin/.kube/config
+      dest: outputs/kubeconfig
   - name: Initial Master | Apply Canal CNI
     shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://docs.projectcalico.org/manifests/canal.yaml
     register: kubectl_cni
