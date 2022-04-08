@@ -4,6 +4,9 @@
   gather_facts: no
   become: yes
   tasks:
+  - name: Wait for cloud-init to complete
+    wait_for:
+      path: /tmp/cloud-init.done
   - name: Initial Master | Copy kubeadm config
     copy:
       src: ./outputs/kubeadm-config.yml
