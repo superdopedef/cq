@@ -26,7 +26,8 @@ resource "aws_subnet" "worker" {
   cidr_block        = cidrsubnet(var.vpc_cidr, 8, 10 + count.index)
   vpc_id            = aws_vpc.vpc.id
   tags = merge({ Name = "${var.name_prefix}-worker-${data.aws_availability_zones.available.names[count.index]}" },
-        { "kubernetes.io/cluster/${var.name_prefix}" = "owned" }, var.aws_tags)
+        { "kubernetes.io/cluster/${var.name_prefix}" = "owned" },
+        { "kubernetes.io/role/internal-elb" = "" }, var.aws_tags)
 }
 
 resource "aws_route_table" "master-rt" {
