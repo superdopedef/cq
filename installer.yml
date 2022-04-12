@@ -117,6 +117,15 @@
           state: present
           src: /home/admin/manifests/contour.yaml
     when: ingress_class == "contour"
+  - block:
+      - name: Post Install | Install Ingress - Nginx
+        get_url:
+          url: https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+          dest: /home/admin/manifests/nginx.yaml
+      - k8s:
+          state: present
+          src: /home/admin/manifests/nginx.yaml
+    when: ingress_class == "nginx"
   - name: Post Install | Template the Prometheus Overrides YAML
     template:
       src: ./ansible/templates/prometheus-overrides.yml.j2
