@@ -143,12 +143,13 @@
   - name: Post Install | Install Prometheus
     shell: helm install monitoring prometheus-community/kube-prometheus-stack -n monitoring -f /home/admin/manifests/prometheus-overrides.yml
     ignore_errors: yes
-  - name: Post Install | Create TLS material
-    shell: openssl req -newkey rsa:2048 -nodes -keyout grafana.key -x509 -days 365 -out grafana.crt -subj "/CN=grafana.{{ cluster_name }}.{{ domain_name }}"
-  - name: Post Install | Install Grafana TLS
-    shell: kubectl create secret tls grafana-tls --cert grafana.crt --key grafana.key -n monitoring
-  - name: Post Install | Install Grafana Ingress
-    k8s:
-      state: present
-      definition: "{{ lookup('template', './ansible/templates/grafana-ingress.yml.j2') }}"
-
+  - block:
+      - name: Post Install | Create TLS material
+        shell: openssl req -newkey rsa:2048 -nodes -keyout grafana.key -x509 -days 365 -out grafana.crt -subj "/CN=grafana.{{ cluster_name }}.{{ domain_name }}"
+      - name: Post Install | Install Grafana TLS
+        shell: kubectl create secret tls grafana-tls --cert grafana.crt --key grafana.key -n monitoring
+      - name: Post Install | Install Grafana Ingress
+        k8s:
+          state: present
+          definition: "{{ lookup('template', './ansible/templates/grafana-ingress.yml.j2') }}"
+  when: ingress_class == "contour"
