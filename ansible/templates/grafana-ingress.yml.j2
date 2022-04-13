@@ -13,4 +13,22 @@ spec:
     - services:
         - name: monitoring-grafana
           port: 80
+{% elif ingress_class == "contour" %}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: monitoring-grafana
+            port:
+              number: 80
 {% endif %}
