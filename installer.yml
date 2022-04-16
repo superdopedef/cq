@@ -152,4 +152,4 @@
         k8s:
           state: present
           definition: "{{ lookup('template', './ansible/templates/grafana-ingress.yml.j2') }}"
-    when: ingress_class == "contour"
+    when: ingress_class == "contour" or ingress_class == "nginx"
