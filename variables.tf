@@ -16,6 +16,10 @@ variable "instance_flavour" {
   default = "t2.medium"
 }
 
+variable "master_instance_flavour" {
+  default = "m5.2xlarge"
+}
+
 variable "master_count" {
   default = 3
 }

@@ -23,7 +23,7 @@ module "master" {
   source = "./terraform/modules/aws/host"
   instance_count = var.master_count
   instance_name = "master"
-  instance_flavour = var.instance_flavour
+  instance_flavour = var.master_instance_flavour
   ami_id = module.aws_utilities.latest_debian_ami
   key_name =  module.aws_key_pair.key_name
   public_key = module.aws_key_pair.public_key
