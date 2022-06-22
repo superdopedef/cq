@@ -3,6 +3,8 @@
   tags: controlplane_init
   gather_facts: no
   become: yes
+  environment:
+    K8S_AUTH_KUBECONFIG: /home/admin/.kube/config
   tasks:
   - name: Wait for cloud-init to complete
     wait_for:
