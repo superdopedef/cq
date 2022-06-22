@@ -49,7 +49,10 @@
       src: /home/admin/.kube/config
       dest: outputs/kubeconfig
   - name: Initial Master | Apply Canal CNI
-    shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://docs.projectcalico.org/manifests/canal.yaml
+    #shell: kubectl --kubeconfig /etc/kubernetes/admin.conf apply -f https://docs.projectcalico.org/manifests/canal.yaml
+    k8s:
+      state: present
+      definition: "{{ lookup('file', './ansible/files/canal.yaml') }}"
     register: kubectl_cni
 
 - hosts: masters:!masters[0]
