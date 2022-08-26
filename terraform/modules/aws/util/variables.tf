@@ -9,7 +9,7 @@ variable "random_pet_separator" {
 }
 
 variable "centos_search" {
-    default = "CentOS Linux 7*"
+    default = "CentOS 7*"
     type = string
 }
 
