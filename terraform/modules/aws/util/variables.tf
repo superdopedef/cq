@@ -8,11 +8,6 @@ variable "random_pet_separator" {
     type = string
 }
 
-variable "centos_search" {
-    default = "CentOS 7*"
-    type = string
-}
-
 variable "debian_search" {
     default = "debian-10*"
     type = string
